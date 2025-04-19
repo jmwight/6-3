@@ -29,7 +29,8 @@ struct wnode
 	struct wnode *right;
 } ;
 
-int strcmpwrapper(const void *, const void *);
+int bsearchstrcmp(const void *word, const void *arrpos);
+int qsortstrcmp(const void *, const void *);
 struct wnode *addwordandline(char *word, int ln, struct wnode *node);
 struct lnode *addlnode(struct wnode *node, int ln);
 void insertlnode(struct lnode *prevnode, int ln);
@@ -69,7 +70,7 @@ int main(int argc, char **argv)
 		int i;
 		for(i = 2; i < argc; ++i)
 			userexclwords[i-2] = argv[i];
-		qsort((void*) exclwords, sizeof defaultexclwords, sizeof(char *), strcmpwrapper); /* TODO: test this in isolation*/
+		//qsort((void*) defaultexclwords, sizeof defaultexclwords, sizeof(char *), qsortstrcmp); /* TODO: test this in isolation
 	}
 	else
 	{
@@ -90,19 +91,23 @@ int main(int argc, char **argv)
 		/* count if new line */
 		if(wattr.c == '\n')
 			ln++;
-		/* if it's not on the excluded words list, add word and page numbers to their
-		 * associated datastructures */
+		/* if it's not on the excluded words list or empty, add word and page numbers 
+		 * to their associated datastructures */
 		if(word[0] != '\0')
 		{
-		//if(bsearch((const void *) word, (const void *) exclwords, sizeof exclwords, 
-					//sizeof(char *), strcmpwrapper))
-		//{
-			/* add them all in lowercase */
-			int i;
-			for(i = 0; word[i] != '\0' && i < MAXWORD - 1; i++)
-				word[i] = tolower(word[i]);
-			root = addwordandline(word, ln, root);
-		//}
+			/* add if it's not on excluded list */
+			char **match;
+			match = (char **) bsearch((const void *) word, (const void *) defaultexclwords, 
+					sizeof defaultexclwords / sizeof *defaultexclwords, 
+					sizeof *defaultexclwords, bsearchstrcmp);
+			if(match == NULL)
+			{
+				/* add them all in lowercase */
+				int i;
+				for(i = 0; word[i] != '\0' && i < MAXWORD - 1; i++)
+					word[i] = tolower(word[i]);
+				root = addwordandline(word, ln, root);
+			}
 		}
 	}
 
@@ -117,13 +122,23 @@ int main(int argc, char **argv)
  * strcmp(word_list[0], word_list[i]). So strcmp gets the address word_list and
  * the word_list+offset not value at word_list[0] which is address of string and
  * word_list[i] which is address of other string */
-int strcmpwrapper(const void *x, const void *y)
+int qsortstrcmp(const void *x, const void *y)
 {
 	/* (char **) tells compiler memory address is char ** so 
 	 * first dereference gives us another address and second one 
 	 * gives us a character. We then dereference to get just address
 	 * of string strcmp is looking for */
-	strcmp(*((char **)x), *((char **)y));
+	return strcmp(*((char **)x), *((char **)y));
+}
+
+/* we need a different one because the 1st word only needs to be dereferenced 
+ * once but the second input is the array of pointers to strings so needs to be
+ * type converted to tell compiler its a pointer to pointer and dereferenced once
+ * so we can get pointer to character strcmp is looking for (it can't take char**
+ * only char*) */
+int bsearchstrcmp(const void *word, const void *arrpos)
+{
+	return strcmp((char *)word, *((char **)arrpos));
 }
 
 struct wnode *addwordandline(char *word, int ln, struct wnode *node)
