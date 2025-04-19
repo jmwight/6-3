@@ -7,7 +7,6 @@
 #define MAXLN		1024
 #define MAXWORD		100
 
-/* TODO: find out how to just declare a structure and not define it. */
 /* struct pgnode: contains page number and pointer to next node containing next
  * page number */
 struct lnode  
@@ -56,13 +55,11 @@ int main(int argc, char **argv)
 	else if(argc > 1 && !comp)
 		arrsz = 0;
 
-	// I don't think this will work we need a variable on which on we are using or something 
-	// or to store data somewhere holding this info 
 	char *userexclwords[arrsz];
-	/* TODO: try with *** instead to see if it works
-	 * exclwords is a pointer to which array of string pointers we will be using 
-	 * I know this is probably an overcomplication just more for learning */
-	//char *(*exclwords[]);
+	
+	/* this is needed because pointers don't store the size of the underlying array
+	 * it is pointing to like an array does. sizeof pointer is the size of the actual 
+	 * pointer not the thing it points to */
 	struct
 	{
 		char **wordlist;
@@ -80,7 +77,7 @@ int main(int argc, char **argv)
 		int i;
 		for(i = 2; i < argc; ++i)
 			userexclwords[i-2] = argv[i];
-		qsort((void*) exclwords.wordlist, exclwords.size / sizeof(char *), sizeof(char *), qsortstrcmp); /* TODO: test this in isolation */
+		qsort((void*) exclwords.wordlist, exclwords.size / sizeof(char *), sizeof(char *), qsortstrcmp);
 	}
 
 	/* Now scan text for words and get structure of page numbers for each word */
@@ -237,10 +234,4 @@ void printwordandline(struct wnode *node)
 
 	/* keep doing down until reaches NULL */
 	printwordandline(node->right);
-}
-
-void memcheck(void *ptr)
-{
-	if(ptr == NULL)
-		printf("out of memory");
 }
