@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "getword.h"
 
 #define MAXLN		1024
@@ -32,6 +33,7 @@ int strcmpwrapper(const void *, const void *);
 struct wnode *addwordandline(char *word, int ln, struct wnode *node);
 struct lnode *addlnode(struct wnode *node, int ln);
 void insertlnode(struct lnode *prevnode, int ln);
+void printwordandline(struct wnode *node);
 
 int main(int argc, char **argv)
 {
@@ -48,46 +50,65 @@ int main(int argc, char **argv)
 	/* get list of excluded words (if requested) */
 	int comp;
 	size_t arrsz = 0;
-	if(argc > 1 && (comp = strcmp(argv[1], "-l")) == 0)
+	if(argc > 2 && (comp = strcmp(argv[1], "-l")) == 0)
 		arrsz = argc - 2;
 	else if(argc > 1 && !comp)
 		arrsz = 0;
 
+	// I don't think this will work we need a variable on which on we are using or something 
+	// or to store data somewhere holding this info 
 	char *userexclwords[arrsz];
 	/* TODO: try with *** instead to see if it works
 	 * exclwords is a pointer to which array of string pointers we will be using 
 	 * I know this is probably an overcomplication just more for learning */
 	//char *(*exclwords[]);
-	char ***exclwords;
+	char **exclwords;
 	if(arrsz == 0)
 	{
-		exclwords = &defaultexclwords;
+		exclwords = defaultexclwords;
 		int i;
 		for(i = 2; i < argc; ++i)
 			userexclwords[i-2] = argv[i];
-		qsort((void*) defaultexclwords, arrsz, sizeof(char*), strcmpwrapper); /* TODO: test this in isolation*/
+		qsort((void*) exclwords, sizeof defaultexclwords, sizeof(char *), strcmpwrapper); /* TODO: test this in isolation*/
 	}
 	else
 	{
 		int i;
 		for(i = 2; i < argc; ++i)
 			userexclwords[i-2] = argv[i];
-		exclwords = &userexclwords;
+		exclwords = userexclwords;
 	}
 
 	/* Now scan text for words and get structure of page numbers for each word */
 	char word[MAXWORD];
 	struct attr wattr;
-	int n = 0;
+	struct wnode *root;
+	root = NULL;
+	int ln = 0;
 	while((wattr = getword(word, MAXWORD)).c != EOF)
 	{
 		/* count if new line */
 		if(wattr.c == '\n')
-			n++;
-
-		/* TODO: CHECK IF WORD IS IN EXCLUSION LIST, REMEMBER CRAZY POINTER STUFF */
-		/* TODO: insert function that adds word */
+			ln++;
+		/* if it's not on the excluded words list, add word and page numbers to their
+		 * associated datastructures */
+		if(word[0] != '\0')
+		{
+		//if(bsearch((const void *) word, (const void *) exclwords, sizeof exclwords, 
+					//sizeof(char *), strcmpwrapper))
+		//{
+			/* add them all in lowercase */
+			int i;
+			for(i = 0; word[i] != '\0' && i < MAXWORD - 1; i++)
+				word[i] = tolower(word[i]);
+			root = addwordandline(word, ln, root);
+		//}
+		}
 	}
+
+	/* Print results */
+	printf("\nResults:\n");
+	printwordandline(root);
 }
 
 /* strcmpwrapper: needed for qsort because function pointer requires a function
@@ -113,6 +134,7 @@ struct wnode *addwordandline(char *word, int ln, struct wnode *node)
 		node = malloc(sizeof(struct wnode));
 		node->word = strdup(word);
 		node->firstln = malloc(sizeof(struct lnode));
+		node->lastln = node->firstln;
 		node->firstln->lnum = ln;
 		node->firstln->nxtlnode = NULL;
 		node->left = NULL;
@@ -120,12 +142,14 @@ struct wnode *addwordandline(char *word, int ln, struct wnode *node)
 		return node;
 	}
 	else if((diff = strcmp(word, node->word)) < 0)
-		addwordandline(word, ln, node->left);
+		node->left = addwordandline(word, ln, node->left);
 	else if((diff = strcmp(word, node->word)) > 0)
-		addwordandline(word, ln, node->right);
+		node->right = addwordandline(word, ln, node->right);
 	/* matching word */
 	else
 		addlnode(node, ln);
+
+	return node;
 }
 
 /* addpgnode: adds pagenode at end. Assumes we are reading book from page 1 to 
@@ -141,6 +165,7 @@ struct lnode *addlnode(struct wnode *node, int ln)
 		newlnode->nxtlnode = NULL; /* make pointer to next lnode null */
 		node->lastln->nxtlnode = newlnode; /* go to last lnode and update pointer to new lnode */
 		node->lastln = newlnode; /* update bookmark pointer in wnode */
+		return newlnode;
 	}
 	/* We have to start at the beginning and find where to insert it into. Much
 	 * less probable scenario if we are reading where line numbers are increasing.
@@ -161,6 +186,7 @@ struct lnode *addlnode(struct wnode *node, int ln)
 		}
 		insertlnode(line, ln);
 	}
+	return NULL; /* it was already matching a line number there so no need to insert */
 }
 
 /* inserts lnode after specified point and fixes pointers so the previous ones all 
@@ -171,4 +197,34 @@ void insertlnode(struct lnode *prevnode, int ln)
 	newnode->lnum = ln;
 	newnode->nxtlnode = prevnode->nxtlnode;
 	prevnode->nxtlnode = newnode;
+}
+
+void printwordandline(struct wnode *node)
+{
+	if(node == NULL)
+		return;
+	/* keeps going down until it reaches NULL */
+	printwordandline(node->left);
+	
+	/* print stuff at that station */
+	printf("%s  ", node->word);
+	struct lnode *line, *end;
+        line = node->firstln;
+	end = node->lastln;
+	do
+	{
+		if(line == end)
+			printf("%d\n", line->lnum);
+		else
+			printf("%d, ", line->lnum);
+	} while((line = line->nxtlnode) != NULL);
+
+	/* keep doing down until reaches NULL */
+	printwordandline(node->right);
+}
+
+void memcheck(void *ptr)
+{
+	if(ptr == NULL)
+		printf("out of memory");
 }

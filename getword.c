@@ -18,7 +18,10 @@ struct attr getword(char *word, int lim)
 
 	while(isspace(c = getch()))
 		if(c == '\n')
+		{
 			onelncom = 0;
+			break;
+		}
 
 	for(firstch = 1; --lim > 0; c = getch())
 	{
@@ -74,7 +77,7 @@ struct attr getword(char *word, int lim)
 				ungetch(c);*/
 				return wattr;
 			case '\n':
-				w = '\0';
+				*w = '\0';
 				wattr.c = '\n';
 				return wattr;
 			default:
