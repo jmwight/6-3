@@ -63,21 +63,24 @@ int main(int argc, char **argv)
 	 * exclwords is a pointer to which array of string pointers we will be using 
 	 * I know this is probably an overcomplication just more for learning */
 	//char *(*exclwords[]);
-	char **exclwords;
+	struct
+	{
+		char **wordlist;
+		size_t size;
+	} exclwords;
 	if(arrsz == 0)
 	{
-		exclwords = defaultexclwords;
-		int i;
-		for(i = 2; i < argc; ++i)
-			userexclwords[i-2] = argv[i];
-		//qsort((void*) defaultexclwords, sizeof defaultexclwords, sizeof(char *), qsortstrcmp); /* TODO: test this in isolation
+		exclwords.wordlist = defaultexclwords;
+		exclwords.size = sizeof(defaultexclwords);
 	}
 	else
 	{
+		exclwords.wordlist = userexclwords;
+		exclwords.size = sizeof(userexclwords);
 		int i;
 		for(i = 2; i < argc; ++i)
 			userexclwords[i-2] = argv[i];
-		exclwords = userexclwords;
+		qsort((void*) exclwords.wordlist, exclwords.size / sizeof(char *), sizeof(char *), qsortstrcmp); /* TODO: test this in isolation */
 	}
 
 	/* Now scan text for words and get structure of page numbers for each word */
@@ -97,9 +100,9 @@ int main(int argc, char **argv)
 		{
 			/* add if it's not on excluded list */
 			char **match;
-			match = (char **) bsearch((const void *) word, (const void *) defaultexclwords, 
-					sizeof defaultexclwords / sizeof *defaultexclwords, 
-					sizeof *defaultexclwords, bsearchstrcmp);
+			match = (char **) bsearch((const void *) word, (const void *) exclwords.wordlist, 
+					exclwords.size / sizeof(char *), 
+					sizeof(char *), bsearchstrcmp);
 			if(match == NULL)
 			{
 				/* add them all in lowercase */
