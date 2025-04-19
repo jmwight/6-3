@@ -98,19 +98,17 @@ int main(int argc, char **argv)
 		 * to their associated datastructures */
 		if(word[0] != '\0')
 		{
-			/* add if it's not on excluded list */
+			/* convert to lowercase and add if it's not on excluded list */
 			char **match;
+			int i;
+			for(i = 0; word[i] != '\0' && i < MAXWORD - 1; i++)
+					word[i] = tolower(word[i]);
+
 			match = (char **) bsearch((const void *) word, (const void *) exclwords.wordlist, 
 					exclwords.size / sizeof(char *), 
 					sizeof(char *), bsearchstrcmp);
 			if(match == NULL)
-			{
-				/* add them all in lowercase */
-				int i;
-				for(i = 0; word[i] != '\0' && i < MAXWORD - 1; i++)
-					word[i] = tolower(word[i]);
 				root = addwordandline(word, ln, root);
-			}
 		}
 	}
 
