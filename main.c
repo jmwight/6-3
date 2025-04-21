@@ -38,8 +38,7 @@ void printwordandline(struct wnode *node);
 int main(int argc, char **argv)
 {
 	/* STUFF FOR EXCLUDED WORDS FROM LIST */
-	/* default excluded words 
-	 * TODO: FIND MORE TO ADD */
+	/* default excluded words */
 	char *defaultexclwords[] = {
 		"a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "if", "in", 
 		"into", "is", "it", "no", "not", "of", "on", "or", "such", "that", "the", 
