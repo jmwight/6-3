@@ -55,9 +55,9 @@ int main(int argc, char **argv)
 		arrsz = 0;
 
 	char *userexclwords[arrsz];
-	
+
 	/* this is needed because pointers don't store the size of the underlying array
-	 * it is pointing to like an array does. sizeof pointer is the size of the actual 
+	 * it is pointing to like an array does. sizeof pointer is the size of the actual
 	 * pointer not the thing it points to */
 	struct
 	{
