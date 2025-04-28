@@ -19,7 +19,6 @@ struct attr getword(char *word, int lim)
 	while(isspace(c = getch()))
 		/* need to return \n because we might be counting lines */
 		if(c == '\n')
-		{
 			onelncom = 0;
 			wattr.c = c;
 			return wattr;
