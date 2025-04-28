@@ -21,6 +21,7 @@ struct attr getword(char *word, int lim)
 		if(c == '\n')
 		{
 			onelncom = 0;
+			*w = '\0';
 			wattr.c = c;
 			return wattr;
 		}
