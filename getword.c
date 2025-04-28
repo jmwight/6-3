@@ -18,10 +18,7 @@ struct attr getword(char *word, int lim)
 
 	while(isspace(c = getch()))
 		if(c == '\n')
-		{
 			onelncom = 0;
-			break;
-		}
 
 	for(firstch = 1; --lim > 0; c = getch())
 	{
@@ -62,8 +59,15 @@ struct attr getword(char *word, int lim)
 				break;
 			case EOF:
 				*w = '\0';
-				wattr.c = c;
+				if(firstch)
+				{
+					wattr.c = c;
+					ungetch(c);
+				}
+				else
+					wattr.c = *word;
 				return wattr;
+
 			case '_':
 				*w++ = c;
 				if(firstch)
@@ -78,7 +82,8 @@ struct attr getword(char *word, int lim)
 				return wattr;
 			case '\n':
 				*w = '\0';
-				wattr.c = '\n';
+				ungetch(c);
+				wattr.c = *word;
 				return wattr;
 			default:
 				*w = c;
